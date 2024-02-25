@@ -13,7 +13,6 @@ type Server struct {
 }
 
 func NewServer() *http.Server {
-
 	NewServer := &Server{
 		port: port,
 	}

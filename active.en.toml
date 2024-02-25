@@ -1,0 +1,11 @@
+[Email]
+one = "Invalid Email address"
+other = "Invalid Email address"
+
+[Required]
+one = "This field is required"
+other = "This field is required"
+
+[UnhashedPassword]
+one = "password"
+other = "password"

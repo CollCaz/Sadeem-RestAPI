@@ -1,0 +1,9 @@
+[Required]
+hash = "sha1-dedbaded6d5a4ed17eefa2e4ee3eee026b7d1d11"
+one = "Arabic This field is required"
+other = "Arabic This field is required"
+
+[UnhashedPassword]
+hash = "sha1-5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+one = "Arabic password"
+other = "Arabic password"
