@@ -5,3 +5,5 @@ CREATE TABLE IF NOT EXISTS roles (
   CONSTRAINT role_name
     CHECK (name = 'regural' OR name = 'admin')
 );
+
+INSERT INTO roles (name) VALUES('regural');

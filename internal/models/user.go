@@ -26,17 +26,17 @@ func (um *UserModel) Insert(user *User) error {
 		return err
 	}
 
-	stmt := `
+	insert_statement := `
   INSERT INTO users (name, email, hashed_password)
   VALUES ($1, $2, $3)
+  RETURNING id
   `
 	args := []any{user.UserName, user.Email, string(hashedPassword)}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err = um.DB.Exec(ctx, stmt, args...)
-	if err != nil {
+	if _, err := um.DB.Exec(ctx, insert_statement, args...); err != nil {
 		return err
 	}
 
