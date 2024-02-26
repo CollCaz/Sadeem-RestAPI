@@ -6,40 +6,26 @@ all: build
 
 build:
 	@cp active.* cmd/api/
-	@echo "Building..."
-	@go build -o main cmd/api/main.go
+	@go build -o bin/sadeemAPI cmd/api/main.go
 
 # Run the application
 run:
 	@cp active.* cmd/api/
 	@go run cmd/api/main.go
 
-# Test the application
-test:
-	@cp active.* cmd/api/
-	@echo "Testing..."
-	@go test ./...
-
 # Clean the binary
 clean:
 	@echo "Cleaning..."
-	@rm -f main
+	@rm -r -f bin
 
 up:
-	@ migrate -source file://DB/Migrations/ -database "$DATABASE_URL" up
+	@migrate -source file://DB/Migrations/ -database "$$DATABASE_URL" up
 
 down:
-	@ migrate -source file://DB/Migrations/ -database "$DATABASE_URL" down
+	@migrate -source file://DB/Migrations/ -database "$$DATABASE_URL" down
 
-# Extract all goi18n message structs
-extract:
-	@goi18n extract
-
-# Merge goi18n files for translation
-merge:
-	@goi18n merge active.en.toml active.ar.toml
-
-translate: extract merge
+help:
+	@printf "build:builds the app in ./bin/\nrun: runs the application\nclean: removes the bin directory\nup: applies up migrations\ndown: applies down migrations\n"
 
 .PHONY: all build run test clean
 		
