@@ -3,3 +3,6 @@ log.json
 Up
 Down
 *.txt
+.air.toml
+/bin
+/tmp
