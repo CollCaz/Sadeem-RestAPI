@@ -2,13 +2,16 @@ package server
 
 import (
 	"Sadeem-RestAPI/internal/models"
+	"Sadeem-RestAPI/internal/translation"
 	"Sadeem-RestAPI/internal/validation"
 	"fmt"
 	"net/http"
 
 	"github.com/go-playground/validator"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
 var Validator = &validation.CustomValidator{V: validator.New()}
@@ -38,6 +41,7 @@ func (s *Server) helloWorldHandler(c echo.Context) error {
 
 func (s *Server) registerUser(c echo.Context) error {
 	lang := c.Request().Header.Get("Accept-Language")
+	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
 	user := new(models.User)
 
 	if err := c.Bind(user); err != nil {
@@ -49,7 +53,21 @@ func (s *Server) registerUser(c echo.Context) error {
 	}
 
 	if err := models.Models.User.Insert(user); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		msg := err.Error()
+		if pgerr, ok := err.(*pgconn.PgError); ok {
+			if pgerr.Code == "23505" {
+				msg = localizer.MustLocalize(&i18n.LocalizeConfig{
+					DefaultMessage: &i18n.Message{
+						ID:    "ErrorDuplicateEmailOrUsername",
+						One:   "Email or Username Already Exists",
+						Other: "Email or Username Already Exists",
+					},
+				})
+			} else {
+				msg = err.Error()
+			}
+		}
+		return c.JSON(http.StatusBadRequest, msg)
 	}
 
 	return c.JSON(http.StatusOK, fmt.Sprintf("User %s Registered Successfully", user.UserName))

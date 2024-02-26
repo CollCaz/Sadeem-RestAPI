@@ -3,7 +3,6 @@ package validation
 import (
 	"Sadeem-RestAPI/internal/translation"
 	"errors"
-	"regexp"
 
 	"github.com/go-playground/validator"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -52,7 +51,7 @@ func msgForField(field, lang string) string {
 	case "Email":
 		msg = localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
-				ID:    "Email",
+				ID:    "InvalidEmail",
 				One:   "email",
 				Other: "email",
 			},
@@ -90,5 +89,3 @@ func msgForTag(tag, lang string) string {
 
 	return msg
 }
-
-var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
