@@ -7,6 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path"
+	"strconv"
+	"strings"
 
 	"github.com/go-playground/validator"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -81,7 +85,10 @@ func (s *Server) registerUser(c echo.Context) error {
 func (s *Server) postProfilePicture(c echo.Context) error {
 	lang := c.Request().Header.Get("Accept-Language")
 	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
-	// id := c.Param("id")
+
+	id := c.Param("id")
+
+	pictureDir := os.Getenv("PICTURE_DIR")
 
 	Message := make(map[string]string)
 	defer c.Request().Body.Close()
@@ -112,6 +119,36 @@ func (s *Server) postProfilePicture(c echo.Context) error {
 			},
 		},
 	)
+
+	_, fileType, _ := strings.Cut(mimeType, "/")
+	fileName := fmt.Sprintf("user_%s-profile_picture.%s", id, fileType)
+	filePath := path.Join(pictureDir, fileName)
+	Message["path"] = filePath
+
+	_, err = os.Create(filePath)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	err = os.WriteFile(filePath, byte, os.ModeAppend)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	user_id, err := strconv.Atoi(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	user := &models.User{
+		ID:          user_id,
+		PicturePath: filePath,
+	}
+
+	err = models.Models.User.UpdatePicture(user)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
 
 	return c.JSON(http.StatusOK, Message)
 }
