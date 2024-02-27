@@ -1,3 +1,4 @@
+-- Table storing the possible roles a user can have
 CREATE TABLE IF NOT EXISTS roles (
   id bigserial PRIMARY KEY, 
   name VARCHAR(100) UNIQUE NOT NULL,
@@ -7,3 +8,4 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 INSERT INTO roles (name) VALUES('regural');
+INSERT INTO roles (name) VALUES('admin');

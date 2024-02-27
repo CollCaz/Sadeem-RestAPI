@@ -6,6 +6,10 @@ other = "Invalid Email address"
 one = "Email or Username Already Exists"
 other = "Email or Username Already Exists"
 
+[InvalidEmail]
+one = "email"
+other = "email"
+
 [Required]
 one = "This field is required"
 other = "This field is required"

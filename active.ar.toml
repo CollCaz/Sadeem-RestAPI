@@ -1,0 +1,38 @@
+[Email]
+few = "Invalid Email address"
+hash = "sha1-205ea7dbce5f6d59418f5c720699b13238b1517f"
+many = "Invalid Email address"
+one = "Invalid Email address"
+other = "Invalid Email address"
+two = "Invalid Email address"
+zero = "Invalid Email address"
+
+[ErrorDuplicateEmailOrUsername]
+other = "ARABIC Email or Username Already Exists"
+
+[InvalidEmail]
+few = "email"
+hash = "sha1-a88b7dcd1a9e3e17770bbaa6d7515b31a2d7e85d"
+many = "email"
+one = "email"
+other = "email"
+two = "email"
+zero = "email"
+
+[Required]
+few = "This field is required"
+hash = "sha1-dedbaded6d5a4ed17eefa2e4ee3eee026b7d1d11"
+many = "This field is required"
+one = "This field is required"
+other = "This field is required"
+two = "This field is required"
+zero = "This field is required"
+
+[UnhashedPassword]
+few = "password"
+hash = "sha1-5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+many = "password"
+one = "password"
+other = "password"
+two = "password"
+zero = "password"

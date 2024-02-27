@@ -5,6 +5,7 @@ import (
 	"Sadeem-RestAPI/internal/server"
 	"Sadeem-RestAPI/internal/translation"
 	"context"
+	"embed"
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,8 +14,8 @@ import (
 	"golang.org/x/text/language"
 )
 
-//go:generate goi18n extract -sourceLanguage en
-//go:generate goi18n extract -sourceLanguage en
+//go:embed active*toml
+var LocaleFS embed.FS
 
 func main() {
 	// Initilize goi18n
@@ -43,8 +44,6 @@ func main() {
 func i18nInit() {
 	translation.Bundle = *i18n.NewBundle(language.English)
 	translation.Bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-	//_, _ = translation.Bundle.LoadMessageFileFS(LocalFS, "active.en.toml")
-	//_, _ = translation.Bundle.LoadMessageFileFS(LocalFS, "active.ar.toml")
-	_, _ = translation.Bundle.LoadMessageFile("active.en.toml")
-	_, _ = translation.Bundle.LoadMessageFile("active.ar.toml")
+	_, _ = translation.Bundle.LoadMessageFileFS(LocaleFS, "active.en.toml")
+	_, _ = translation.Bundle.LoadMessageFileFS(LocaleFS, "active.ar.toml")
 }

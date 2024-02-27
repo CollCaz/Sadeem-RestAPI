@@ -26,7 +26,7 @@ func (um *UserModel) Insert(user *User) error {
 		return err
 	}
 
-	insert_statement := `
+	insertStatement := `
   INSERT INTO users (name, email, hashed_password)
   VALUES ($1, $2, $3)
   RETURNING id
@@ -36,9 +36,16 @@ func (um *UserModel) Insert(user *User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	if _, err := um.DB.Exec(ctx, insert_statement, args...); err != nil {
+	//if _, err := um.DB.Exec(ctx, insert_statement, args...); err != nil {
+	//	return err
+	//}
+
+	if err := um.DB.QueryRow(ctx, insertStatement, args...).Scan(&user.ID); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (um *UserModel) UpdatePicture(user *User) error {
 }
