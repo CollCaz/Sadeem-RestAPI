@@ -12,6 +12,7 @@ These instructions will get you a copy of the project up and running on your loc
 print all make options and their description
 ```bash
 make help
+```
 
 build the application
 ```bash
