@@ -84,6 +84,25 @@ func (um *UserModel) DeleteUserByName(userName string) error {
 	return nil
 }
 
+func (um *UserModel) GetProfilePicture(userName string) (string, error) {
+	statement := `
+  SELECT profile_picture_path
+  FROM users
+  WHERE name = ($1)
+  `
+	var picturePath string
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := um.DB.QueryRow(ctx, statement, userName).Scan(&picturePath)
+	if err != nil {
+		return "", err
+	}
+
+	return picturePath, nil
+}
+
 func (um *UserModel) GetUserByName(userName string) (*User, error) {
 	user := new(User)
 
@@ -138,7 +157,7 @@ func (um *UserModel) ResetPicture(userName string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := um.DB.Exec(ctx, statement, userName, defaultPFP)
+	_, err := um.DB.Exec(ctx, statement, defaultPFP, userName)
 	if err != nil {
 		return err
 	}

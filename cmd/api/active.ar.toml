@@ -1,6 +1,6 @@
 [CouldNotReadImage]
-hash = "sha1-a379a3e0733d11e9edb30ecfc6a74fa936b99f02"
-other = "Could not proccess you're image, plasea try again with a new image"
+hash = "sha1-9830ddecde6551eeabd42378e8628f763ed69744"
+other = "Could not proccess your image, plasea try again with a new image"
 
 [Email]
 hash = "sha1-205ea7dbce5f6d59418f5c720699b13238b1517f"
@@ -23,9 +23,9 @@ other = "Username or Password incorrect"
 hash = "sha1-9de6a795c79f1d7c4f8f5ab9ce1db26f5e70be52"
 other = "We encountred an error proccessing you're request, please try again later"
 
-[ErrorUnAuthorized]
-hash = "sha1-4e5feb425ee86a9b8aba926f071314af9c845df2"
-other = "You don't have permission"
+[ErrorUserNotExists]
+hash = "sha1-1030932b66074803de9f40c75b4d9af54a5ecdd8"
+other = "No user with that name has been found"
 
 [InvalidEmail]
 hash = "sha1-a88b7dcd1a9e3e17770bbaa6d7515b31a2d7e85d"
@@ -42,6 +42,14 @@ other = "This field is required"
 [SuccessUpdateProfilePicture]
 hash = "sha1-aa2842aeff9f2835ce5dfa096fb320ba4a3660fd"
 other = "Profile Picture Updated Successfully"
+
+[SuccessUserDelete]
+hash = "sha1-c73f99152b03acd45e1d3e08021cd9c2029e9743"
+other = "User deleted successfully"
+
+[SuccessUserUpdate]
+hash = "sha1-534b7dc859a23ce2fe7ff68eaba93c940c391119"
+other = "User info update successfully"
 
 [UnhashedPassword]
 hash = "sha1-5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"

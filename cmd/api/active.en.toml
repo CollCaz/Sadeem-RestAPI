@@ -1,12 +1,14 @@
-CouldNotReadImage = "Could not proccess you're image, plasea try again with a new image"
+CouldNotReadImage = "Could not proccess your image, plasea try again with a new image"
 Email = "Invalid Email address"
 ErrorFailedLogin = "Username or Password incorrect"
 ErrorGenericInternal = "We encountred an error proccessing you're request, please try again later"
-ErrorUnAuthorized = "You don't have permission"
+ErrorUserNotExists = "No user with that name has been found"
 InvalidEmail = "email"
 NotPngOrJpeg = "Profile Picture must be a PNG or a JPG"
 Required = "This field is required"
 SuccessUpdateProfilePicture = "Profile Picture Updated Successfully"
+SuccessUserDelete = "User deleted successfully"
+SuccessUserUpdate = "User info update successfully"
 UnhashedPassword = "password"
 
 [ErrorDuplicateEmailOrUsername]

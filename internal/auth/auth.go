@@ -16,7 +16,6 @@ type JwtClaims struct {
 }
 
 func CreateJwtToken(user *models.User) (string, error) {
-	models.Models.User.SetUserRole(user)
 	signingKey := os.Getenv("JWT_SIGNING_KEY")
 	claims := &JwtClaims{
 		user.UserName,

@@ -21,6 +21,8 @@ import (
 
 var Validator = &validation.CustomValidator{V: validator.New()}
 
+// pictureDir = os.Getenv("PICTURE_DIR")
+
 func (s *Server) registerUser(c echo.Context) error {
 	lang := c.Request().Header.Get("Accept-Language")
 	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
@@ -251,32 +253,12 @@ func (s *Server) getUserByUserName(c echo.Context) error {
 	user, err := models.Models.User.GetUserByName(userName)
 	if err != nil {
 		message := localizer.MustLocalize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:    "ErrorUserNotExists",
-				Other: "No user with that name has been found",
-			},
+			MessageID: "ErrorUserNotExists",
 		})
 		return c.JSON(http.StatusUnauthorized, echo.Map{"error": message})
 	}
 
 	return c.JSON(http.StatusOK, echo.Map{"message": user})
-}
-
-func (s *Server) getCategorieByName(c echo.Context) error {
-	lang := c.Request().Header.Get("Accept-Language")
-	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
-
-	name := c.Param("name")
-
-	cat, err := models.Models.Catagory.GetByName(name)
-	if err != nil {
-		message := localizer.MustLocalize(&i18n.LocalizeConfig{
-			MessageID: "ErrorGenericInternal",
-		})
-		return c.JSON(http.StatusUnauthorized, echo.Map{"error": message})
-	}
-
-	return c.JSON(http.StatusOK, echo.Map{"message": echo.Map{"category": cat}})
 }
 
 func (s *Server) getAllCategories(c echo.Context) error {
@@ -307,6 +289,31 @@ func (s *Server) getAllCategories(c echo.Context) error {
 	return c.JSON(http.StatusOK, echo.Map{"message": echo.Map{"categories": cats, "metadata": metadata}})
 }
 
+func (s *Server) getProfilePicture(c echo.Context) error {
+	lang := c.Request().Header.Get("Accept-Language")
+	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
+
+	message := doesUserExist(c, localizer)
+	if message != nil {
+		return c.JSON(http.StatusBadRequest, message)
+	}
+
+	userName := c.Param("name")
+
+	picturePath, err := models.Models.User.GetProfilePicture(userName)
+	if err != nil {
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			MessageID: "ErrorUserNotExists",
+		})
+
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": message})
+	}
+
+	fmt.Println(picturePath)
+
+	return c.Redirect(http.StatusFound, "/pics/user_hsell-profile_picture.jpeg")
+}
+
 // Returns ture if the JWT user is the same
 // as the user in the url params OR if the jwt
 // user is an admin
@@ -325,4 +332,19 @@ func isAdmin(c echo.Context) bool {
 	token := c.Get("user").(*jwt.Token)
 	claims := token.Claims.(jwt.MapClaims)
 	return claims["admin"].(bool)
+}
+
+func doesUserExist(c echo.Context, localizer *i18n.Localizer) echo.Map {
+	userName := c.Param("name")
+	_, err := models.Models.User.GetUserByName(userName)
+	if err != nil {
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "ErrorUserNotExists",
+				Other: "No user with that name has been found",
+			},
+		})
+		return echo.Map{"error": message}
+	}
+	return nil
 }
