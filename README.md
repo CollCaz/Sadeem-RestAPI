@@ -1,7 +1,7 @@
 
 # Project Sadeem-RestAPI
 
-One Paragraph of project description goes here
+RestAPI written in Go using the Echo framework
 
 ## Getting Started
 
@@ -9,10 +9,9 @@ These instructions will get you a copy of the project up and running on your loc
 
 ## MakeFile
 
-run all make commands with clean tests
+print all make options and their description
 ```bash
-make all build
-```
+make help
 
 build the application
 ```bash
@@ -24,13 +23,16 @@ run the application
 make run
 ```
 
-run the test suite
-```bash
-make test
-```
-
 clean up binary from the last build
 ```bash
 make clean
 ```
 	
+apply down migrations
+```bash
+make down
+```
+apply up migrations
+```bash
+make up
+```
