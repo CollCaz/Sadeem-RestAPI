@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"Sadeem-RestAPI/internal/models"
 	"os"
 	"time"
 
@@ -8,16 +9,19 @@ import (
 )
 
 type JwtClaims struct {
-	Name  string `json:"name"`
-	Admin bool   `json:"admin"`
+	Name   string `json:"name"`
+	UserID int    `json:"-"`
+	Admin  bool   `json:"admin"`
 	jwt.RegisteredClaims
 }
 
-func CreateJwtToken(userName string, isAdmin bool) (string, error) {
+func CreateJwtToken(user *models.User) (string, error) {
+	models.Models.User.SetUserRole(user)
 	signingKey := os.Getenv("JWT_SIGNING_KEY")
 	claims := &JwtClaims{
-		userName,
-		isAdmin,
+		user.UserName,
+		user.ID,
+		user.IsAdmin,
 		jwt.RegisteredClaims{
 			ID:        "user_token",
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 72)),

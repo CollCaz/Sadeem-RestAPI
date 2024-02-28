@@ -21,8 +21,14 @@ func main() {
 	// Initilize goi18n
 	i18nInit()
 
+	databaseURL := os.Getenv("DATABASE_URL")
+	// Making sure the database url is available
+	if databaseURL == "" {
+		panic("No database URL found! please export the DATABASE_URL env variable")
+	}
+
 	// Using pgxpool for better performance
-	pool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	pool, err := pgxpool.New(context.Background(), databaseURL)
 	if err != nil {
 		panic("could not connect to database")
 	}
@@ -30,7 +36,7 @@ func main() {
 	// Making sure the JWT signing key is available
 	signingKey := os.Getenv("JWT_SIGNING_KEY")
 	if signingKey == "" {
-		panic("No signking key defined!")
+		panic("No signking key found! please export the JWT_SIGNING_KEY env variable")
 	}
 	server := server.NewServer()
 

@@ -5,7 +5,19 @@ RestAPI written in Go using the Echo framework
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+1. Clone this repo locally.
+
+2. Make sure you have PostgreSQL set up and running.
+
+3. Create a new database for this project.
+
+4. Define your `$DATABASE_URL` and `$JWT_SIGNING_TOKEN` environment variables and optionally the `$DEFAULT_PROFILE_PICTURE` and `$PICTURE_DIR` variables.
+
+5. run `make up` to apply up migrations.
+
+5. run `make build` to buld the application.
+
+6. run the binary found in bin/ .
 
 ## MakeFile
 

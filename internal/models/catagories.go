@@ -127,12 +127,15 @@ func (um *CatagoryModel) GetAll(filters Filters) ([]*Catagory, Metadata, error) 
 	return categories, metadata, nil
 }
 
-func (um *CatagoryModel) GetAllActive(filters Filters) ([]*Catagory, Metadata, error) {
+func (um *CatagoryModel) GetAllActive(userID int, filters Filters) ([]*Catagory, Metadata, error) {
+	// we use Sprintf because we can't use variables in the some of the paramaters
 	statement := fmt.Sprintf(`
   SELECT count(*) OVER(), name FROM categories
-  WHERE activated = TRUE
-  ORDER BY %s %s, id ASC
-  LIMIT %d OFFSET %d `, filters.sortColumn(), filters.sortDirection(), filters.limit(), filters.offset())
+  JOIN user_categories
+  ON categories.id = user_categories.category_id
+  WHERE user_categories.user_id = %d
+  ORDER BY name %s, id ASC
+  LIMIT %d OFFSET %d `, userID, filters.sortDirection(), filters.limit(), filters.offset())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
