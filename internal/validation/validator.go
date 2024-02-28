@@ -44,7 +44,6 @@ func msgForField(field, lang string) string {
 		msg = localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "UnhashedPassword",
-				One:   "password",
 				Other: "password",
 			},
 		})
@@ -52,7 +51,6 @@ func msgForField(field, lang string) string {
 		msg = localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "InvalidEmail",
-				One:   "email",
 				Other: "email",
 			},
 		})
@@ -71,7 +69,6 @@ func msgForTag(tag, lang string) string {
 		msg = localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "Required",
-				One:   "This field is required",
 				Other: "This field is required",
 			},
 		})
@@ -79,7 +76,6 @@ func msgForTag(tag, lang string) string {
 		msg = localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "Email",
-				One:   "Invalid Email address",
 				Other: "Invalid Email address",
 			},
 		})

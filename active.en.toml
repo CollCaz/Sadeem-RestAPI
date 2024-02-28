@@ -1,19 +1,14 @@
-[Email]
-one = "Invalid Email address"
-other = "Invalid Email address"
+CouldNotReadImage = "Could not proccess you're image, plasea try again with a new image"
+Email = "Invalid Email address"
+ErrorFailedLogin = "Username or Password incorrect"
+ErrorGenericInternal = "We encountred an error proccessing you're request, please try again later"
+ErrorUnAuthorized = "You don't have permission"
+InvalidEmail = "email"
+NotPngOrJpeg = "Profile Picture must be a PNG or a JPG"
+Required = "This field is required"
+SuccessUpdateProfilePicture = "Profile Picture Updated Successfully"
+UnhashedPassword = "password"
 
 [ErrorDuplicateEmailOrUsername]
 one = "Email or Username Already Exists"
 other = "Email or Username Already Exists"
-
-[InvalidEmail]
-one = "email"
-other = "email"
-
-[Required]
-one = "This field is required"
-other = "This field is required"
-
-[UnhashedPassword]
-one = "password"
-other = "password"

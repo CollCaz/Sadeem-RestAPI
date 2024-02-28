@@ -1,6 +1,7 @@
 package server
 
 import (
+	"Sadeem-RestAPI/internal/auth"
 	"Sadeem-RestAPI/internal/models"
 	"Sadeem-RestAPI/internal/translation"
 	"Sadeem-RestAPI/internal/validation"
@@ -9,17 +10,27 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 
 	"github.com/go-playground/validator"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
-var Validator = &validation.CustomValidator{V: validator.New()}
+var (
+	Validator  = &validation.CustomValidator{V: validator.New()}
+	signingKey = os.Getenv("JWT_SIGNING_KEY")
+)
+
+// Middleware for JWT Authintication
+var jwtMiddleWare = echojwt.WithConfig(echojwt.Config{
+	SigningMethod: "HS512",
+	SigningKey:    []byte(signingKey),
+})
 
 func (s *Server) RegisterRoutes() http.Handler {
 	e := echo.New()
@@ -27,22 +38,23 @@ func (s *Server) RegisterRoutes() http.Handler {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.GET("/", s.helloWorldHandler)
+	e.GET("/login", s.getUserToken)
 	e.POST("/users", s.registerUser)
-	e.PUT("/users/:id/profile-picture", s.postProfilePicture)
-	e.GET("/users/:id", s.getUserByID)
-	e.GET("/users/:name", s.getUserByUserName)
-	e.GET("/users/:name/test", s.getUserByUserNameT)
+	e.PUT("/users/:name/profile-picture", jwtMiddleWare(s.postProfilePicture))
+	e.GET("/users/:name", jwtMiddleWare(adminMiddleWare((s.getUserByUserName))))
+	e.GET("/categories/:name", jwtMiddleWare(s.getCategorieByName))
+	e.GET("/categories", s.getAllCategories)
 
 	return e
 }
 
-func (s *Server) helloWorldHandler(c echo.Context) error {
-	resp := map[string]string{
-		"message": "Hello World",
+func adminMiddleWare(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if !isAdmin(c) {
+			return echo.ErrUnauthorized
+		}
+		return next(c)
 	}
-
-	return c.JSON(http.StatusOK, resp)
 }
 
 func (s *Server) registerUser(c echo.Context) error {
@@ -50,15 +62,12 @@ func (s *Server) registerUser(c echo.Context) error {
 	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
 	user := new(models.User)
 
-	errorMessage := make(map[string]any)
-
 	if err := c.Bind(user); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	if msgs, err := Validator.Validate(user, lang); err != nil {
-		errorMessage["error"] = msgs
-		return c.JSON(http.StatusBadRequest, errorMessage)
+		return c.JSON(http.StatusBadRequest, echo.Map{"errors": msgs})
 	}
 
 	if err := models.Models.User.Insert(user); err != nil {
@@ -82,25 +91,78 @@ func (s *Server) registerUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, fmt.Sprintf("User %s Registered Successfully", user.UserName))
 }
 
+func (s *Server) getUserToken(c echo.Context) error {
+	lang := c.Request().Header.Get("Accept-Language")
+	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
+
+	user := new(models.User)
+
+	if err := c.Bind(user); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	err := models.Models.User.ValidateLogin(user)
+	if err != nil {
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "ErrorFailedLogin",
+				Other: "Username or Password incorrect",
+			},
+		})
+		return c.JSON(http.StatusUnauthorized, echo.Map{"error": message})
+	}
+
+	models.Models.User.SetUserRole(user)
+
+	token, err := auth.CreateJwtToken(user.UserName, user.IsAdmin)
+	if err != nil {
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			MessageID: "ErrorGenericInternal",
+		})
+		c.Logger().Error(err)
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": message})
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{"token": token})
+}
+
 func (s *Server) postProfilePicture(c echo.Context) error {
 	lang := c.Request().Header.Get("Accept-Language")
 	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
 
-	id := c.Param("id")
+	fmt.Println(c.ParamNames())
+	fmt.Println(c.Param("name"))
+	if !ValidTokenForParam(c) {
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "ErrorUnAuthorized",
+				Other: "You don't have permission",
+			},
+		})
+		return c.JSON(http.StatusUnauthorized, echo.Map{"error": message})
+	}
+
+	userName := c.Param("name")
 
 	pictureDir := os.Getenv("PICTURE_DIR")
 
-	Message := make(map[string]string)
+	var message string
 	defer c.Request().Body.Close()
 	byte, err := io.ReadAll(c.Request().Body)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, "Could not read body")
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "CouldNotReadImage",
+				Other: "Could not proccess your image, plasea try again with a new image",
+			},
+		})
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": message})
 	}
 
 	mimeType := http.DetectContentType(byte)
 
 	if mimeType != "image/jpeg" && mimeType != "image/png" {
-		Message["error"] = localizer.MustLocalize(
+		message = localizer.MustLocalize(
 			&i18n.LocalizeConfig{
 				DefaultMessage: &i18n.Message{
 					ID:    "NotPngOrJpeg",
@@ -108,10 +170,41 @@ func (s *Server) postProfilePicture(c echo.Context) error {
 				},
 			})
 
-		return c.JSON(http.StatusBadRequest, Message)
+		return c.JSON(http.StatusBadRequest, echo.Map{"message": message})
 	}
 
-	Message["message"] = localizer.MustLocalize(
+	_, fileType, _ := strings.Cut(mimeType, "/")
+	fileName := fmt.Sprintf("user_%s-profile_picture.%s", userName, fileType)
+	filePath := path.Join(pictureDir, fileName)
+
+	message = localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "ErrorGenericInternal",
+			Other: "We encountred an error proccessing you're request, please try again later",
+		},
+	})
+
+	_, err = os.Create(filePath)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": message})
+	}
+
+	err = os.WriteFile(filePath, byte, os.ModeAppend)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": message})
+	}
+
+	user := &models.User{
+		UserName:    userName,
+		PicturePath: filePath,
+	}
+
+	err = models.Models.User.UpdatePicture(user)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": err})
+	}
+
+	message = localizer.MustLocalize(
 		&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "SuccessUpdateProfilePicture",
@@ -120,62 +213,84 @@ func (s *Server) postProfilePicture(c echo.Context) error {
 		},
 	)
 
-	_, fileType, _ := strings.Cut(mimeType, "/")
-	fileName := fmt.Sprintf("user_%s-profile_picture.%s", id, fileType)
-	filePath := path.Join(pictureDir, fileName)
-	Message["path"] = filePath
-
-	_, err = os.Create(filePath)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-
-	err = os.WriteFile(filePath, byte, os.ModeAppend)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-
-	user_id, err := strconv.Atoi(id)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-
-	user := &models.User{
-		ID:          user_id,
-		PicturePath: filePath,
-	}
-
-	err = models.Models.User.UpdatePicture(user)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-
-	return c.JSON(http.StatusOK, Message)
-}
-
-func (s *Server) getUserByID(c echo.Context) error {
-	resp := map[string]string{
-		"id":   "1",
-		"user": "CollCaz",
-	}
-
-	return c.JSON(http.StatusOK, resp)
+	return c.JSON(http.StatusOK, echo.Map{"message": message})
 }
 
 func (s *Server) getUserByUserName(c echo.Context) error {
-	resp := map[string]string{
-		"id":   "1",
-		"user": "CollCaz",
+	lang := c.Request().Header.Get("Accept-Language")
+	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
+
+	if !isAdmin(c) {
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			MessageID: "ErrorUnAuthorized",
+		})
+		return c.JSON(http.StatusUnauthorized, message)
 	}
 
-	return c.JSON(http.StatusOK, resp)
+	userName := c.Param("name")
+	user, err := models.Models.User.GetUserByName(userName)
+	if err != nil {
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "ErrorUserNotExists",
+				Other: "No user with that name has been found",
+			},
+		})
+		return c.JSON(http.StatusUnauthorized, echo.Map{"error": message})
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{"message": user})
 }
 
-func (s *Server) getUserByUserNameT(c echo.Context) error {
-	resp := map[string]string{
-		"id":   "1",
-		"user": "Test",
+func (s *Server) getCategorieByName(c echo.Context) error {
+	lang := c.Request().Header.Get("Accept-Language")
+	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
+
+	name := c.Param("name")
+
+	cat, err := models.Models.Catagory.GetByName(name)
+	if err != nil {
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			MessageID: "ErrorGenericInternal",
+		})
+		return c.JSON(http.StatusUnauthorized, echo.Map{"error": message})
 	}
 
-	return c.JSON(http.StatusOK, resp)
+	return c.JSON(http.StatusOK, echo.Map{"message": echo.Map{"category": cat}})
+}
+
+func (s *Server) getAllCategories(c echo.Context) error {
+	input := &models.Filters{}
+	err := c.Bind(input)
+	if err != nil {
+		return err
+	}
+
+	input.SortSafeList = []string{"name", "-name"}
+
+	cats, metadata, err := models.Models.Catagory.GetAllActive(*input)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, echo.Map{"message": echo.Map{"categories": cats, "metadata": metadata}})
+}
+
+// Returns ture if the JWT user is the same
+// as the user in the url params OR if the jwt
+// user is an admin
+func ValidTokenForParam(c echo.Context) bool {
+	token := c.Get("user").(*jwt.Token)
+	claims := token.Claims.(jwt.MapClaims)
+	tokenUser := claims["name"].(string)
+	isAdmin := claims["admin"].(bool)
+
+	paramUser := c.Param("name")
+
+	return paramUser == tokenUser || isAdmin
+}
+
+func isAdmin(c echo.Context) bool {
+	token := c.Get("user").(*jwt.Token)
+	claims := token.Claims.(jwt.MapClaims)
+	return claims["admin"].(bool)
 }

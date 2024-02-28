@@ -1,38 +1,48 @@
+[CouldNotReadImage]
+hash = "sha1-a379a3e0733d11e9edb30ecfc6a74fa936b99f02"
+other = "Could not proccess you're image, plasea try again with a new image"
+
 [Email]
-few = "Invalid Email address"
 hash = "sha1-205ea7dbce5f6d59418f5c720699b13238b1517f"
-many = "Invalid Email address"
-one = "Invalid Email address"
 other = "Invalid Email address"
-two = "Invalid Email address"
-zero = "Invalid Email address"
 
 [ErrorDuplicateEmailOrUsername]
-other = "ARABIC Email or Username Already Exists"
+few = "Email or Username Already Exists"
+hash = "sha1-318d66d4626db63687c21e0790d4305b017bc15c"
+many = "Email or Username Already Exists"
+one = "Email or Username Already Exists"
+other = "Email or Username Already Exists"
+two = "Email or Username Already Exists"
+zero = "Email or Username Already Exists"
+
+[ErrorFailedLogin]
+hash = "sha1-7b2d4d8c0ab1d9e166d7f8488fe1f7aee6971c91"
+other = "Username or Password incorrect"
+
+[ErrorGenericInternal]
+hash = "sha1-9de6a795c79f1d7c4f8f5ab9ce1db26f5e70be52"
+other = "We encountred an error proccessing you're request, please try again later"
+
+[ErrorUnAuthorized]
+hash = "sha1-4e5feb425ee86a9b8aba926f071314af9c845df2"
+other = "You don't have permission"
 
 [InvalidEmail]
-few = "email"
 hash = "sha1-a88b7dcd1a9e3e17770bbaa6d7515b31a2d7e85d"
-many = "email"
-one = "email"
 other = "email"
-two = "email"
-zero = "email"
+
+[NotPngOrJpeg]
+hash = "sha1-d80efd8a9fcb8dd5e39efdd3e7e31b00c0f43f06"
+other = "Profile Picture must be a PNG or a JPG"
 
 [Required]
-few = "This field is required"
 hash = "sha1-dedbaded6d5a4ed17eefa2e4ee3eee026b7d1d11"
-many = "This field is required"
-one = "This field is required"
 other = "This field is required"
-two = "This field is required"
-zero = "This field is required"
+
+[SuccessUpdateProfilePicture]
+hash = "sha1-aa2842aeff9f2835ce5dfa096fb320ba4a3660fd"
+other = "Profile Picture Updated Successfully"
 
 [UnhashedPassword]
-few = "password"
 hash = "sha1-5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
-many = "password"
-one = "password"
 other = "password"
-two = "password"
-zero = "password"

@@ -21,14 +21,24 @@ func main() {
 	// Initilize goi18n
 	i18nInit()
 
+	// Using pgxpool for better performance
 	pool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		panic("could not connect to database")
+	}
+
+	// Making sure the JWT signing key is available
+	signingKey := os.Getenv("JWT_SIGNING_KEY")
+	if signingKey == "" {
+		panic("No signking key defined!")
 	}
 	server := server.NewServer()
 
 	models.Models = &models.ModelStruct{
 		User: &models.UserModel{
+			DB: pool,
+		},
+		Catagory: &models.CatagoryModel{
 			DB: pool,
 		},
 	}
