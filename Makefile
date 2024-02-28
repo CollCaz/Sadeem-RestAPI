@@ -2,7 +2,6 @@
 # Simple Makefile for a Go project
 
 # Build the application
-all: build
 
 build:
 	@cp active.* cmd/api/
@@ -27,5 +26,3 @@ down:
 help:
 	@printf "build:builds the app in ./bin/\nrun: runs the application\nclean: removes the bin directory\nup: applies up migrations\ndown: applies down migrations\n"
 
-.PHONY: all build run test clean
-		
