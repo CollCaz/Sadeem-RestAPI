@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/go-playground/validator"
@@ -54,21 +55,97 @@ func (s *Server) registerUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, msg)
 	}
 
-	return c.JSON(http.StatusOK, fmt.Sprintf("User %s Registered Successfully", user.UserName))
+	return c.JSON(http.StatusCreated, fmt.Sprintf("User %s Registered Successfully", user.UserName))
 }
 
-func (s *Server) getUserToken(c echo.Context) error {
+func (s *Server) updateUser(c echo.Context) error {
 	lang := c.Request().Header.Get("Accept-Language")
 	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
 
-	user := new(models.User)
+	if !ValidTokenForParam(c) {
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			MessageID: "ErrorUnAuthorized",
+		})
 
-	if err := c.Bind(user); err != nil {
+		return c.JSON(http.StatusUnauthorized, echo.Map{"error": message})
+	}
+
+	type inputStruct struct {
+		Name            string `json:"name,omitempty"`
+		Email           string `json:"emai,omitempty"`
+		Password        string `json:"password,omitempty"`
+		NewPassword     string `json:"newPassword,omitempty"`
+		PasswordConfirm string `json:"passwordConfirm,omitempty" validate:"eqfield=NewPassword"`
+	}
+
+	input := &inputStruct{}
+
+	err := c.Bind(input)
+	if err != nil {
+		c.Logger().Error(err)
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": err})
+	}
+
+	if msgs, err := Validator.Validate(input, lang); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": msgs})
+	}
+
+	id, err := getIDFromParam(c)
+	if err != nil {
+		c.Logger().Error(err)
+		return err
+	}
+
+	user := &models.User{
+		ID:               id,
+		UserName:         input.Name,
+		Email:            input.Email,
+		UnhashedPassword: input.PasswordConfirm,
+	}
+
+	err = models.Models.User.UpdateUser(user)
+	if err != nil {
+		c.Logger().Error(err)
+		return err
+	}
+
+	message := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "UserUpdateSuccess",
+			Other: "User info updated successfully",
+		},
+	})
+
+	return c.JSON(http.StatusOK, echo.Map{"message": message})
+}
+
+func (s *Server) login(c echo.Context) error {
+	lang := c.Request().Header.Get("Accept-Language")
+	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
+
+	type input struct {
+		Email    string `json:"email" validate:"required"`
+		Password string `json:"password" validate:"required"`
+	}
+
+	i := &input{}
+
+	if err := c.Bind(i); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	if msgs, err := Validator.Validate(i, lang); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"errors": msgs})
+	}
+
+	user := &models.User{
+		Email:            i.Email,
+		UnhashedPassword: i.Password,
 	}
 
 	err := models.Models.User.ValidateLogin(user)
 	if err != nil {
+		c.Logger().Error(err, user)
 		message := localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "ErrorFailedLogin",
@@ -82,6 +159,7 @@ func (s *Server) getUserToken(c echo.Context) error {
 
 	token, err := auth.CreateJwtToken(user)
 	if err != nil {
+		c.Logger().Error(err, user)
 		message := localizer.MustLocalize(&i18n.LocalizeConfig{
 			MessageID: "ErrorGenericInternal",
 		})
@@ -89,7 +167,7 @@ func (s *Server) getUserToken(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": message})
 	}
 
-	return c.JSON(http.StatusOK, echo.Map{"token": token, "user": user})
+	return c.JSON(http.StatusOK, token)
 }
 
 func (s *Server) deleteProfilePicture(c echo.Context) error {
@@ -103,8 +181,9 @@ func (s *Server) deleteProfilePicture(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, echo.Map{"error": message})
 	}
 
-	userName := c.Param("name")
-	err := models.Models.User.ResetPicture(userName)
+	user := c.Param("name")
+
+	err := models.Models.User.ResetPicture(user)
 	if err != nil {
 		message := localizer.MustLocalize(&i18n.LocalizeConfig{
 			MessageID: "ErrorGenericInternal",
@@ -133,13 +212,14 @@ func (s *Server) deleteUser(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, echo.Map{"error": message})
 	}
 
-	userName := c.Param("name")
-	err := models.Models.User.DeleteUserByName(userName)
+	name := c.Param("name")
+
+	err := models.Models.User.DeleteUser(name)
 	if err != nil {
 		message := localizer.MustLocalize(&i18n.LocalizeConfig{
 			MessageID: "ErrorGenericInternal",
 		})
-		return c.JSON(http.StatusOK, echo.Map{"message": message, "user": userName})
+		return c.JSON(http.StatusOK, echo.Map{"message": message})
 	}
 
 	message := localizer.MustLocalize(&i18n.LocalizeConfig{
@@ -151,12 +231,42 @@ func (s *Server) deleteUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, echo.Map{"message": message})
 }
 
+func (s *Server) setCategoryVisibilityOnUser(c echo.Context) error {
+	lang := c.Request().Header.Get("Accept-Language")
+	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
+
+	type inputStruct struct {
+		UserName   string   `json:"userName" validate:"required"`
+		Categories []string `json:"categories" validate:"required"`
+		Activate   bool     `json:"activate" validate:"required"`
+	}
+
+	input := &inputStruct{}
+	err := c.Bind(input)
+	if err != nil {
+		c.Logger().Error(err)
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "ErrorGenericBadRequest",
+				Other: "Your request doe not match the specified format, please fix and try again",
+			},
+		})
+		return c.JSON(http.StatusBadRequest, message)
+	}
+
+	err = models.Models.Catagory.EditOnUser(input.UserName, input.Categories, input.Activate)
+	if err != nil {
+		c.Logger().Error(err)
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, nil)
+}
+
 func (s *Server) postProfilePicture(c echo.Context) error {
 	lang := c.Request().Header.Get("Accept-Language")
 	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
 
-	fmt.Println(c.ParamNames())
-	fmt.Println(c.Param("name"))
 	if !ValidTokenForParam(c) {
 		message := localizer.MustLocalize(&i18n.LocalizeConfig{
 			MessageID: "ErrorUnAuthorized",
@@ -218,7 +328,7 @@ func (s *Server) postProfilePicture(c echo.Context) error {
 
 	user := &models.User{
 		UserName:    userName,
-		PicturePath: filePath,
+		PicturePath: fileName,
 	}
 
 	err = models.Models.User.UpdatePicture(user)
@@ -242,9 +352,13 @@ func (s *Server) getUserByUserName(c echo.Context) error {
 	lang := c.Request().Header.Get("Accept-Language")
 	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
 
-	if !isAdmin(c) {
+	if !ValidTokenForParam(c) {
+		c.Logger().Error(c.Get("user").(*jwt.Token))
 		message := localizer.MustLocalize(&i18n.LocalizeConfig{
-			MessageID: "ErrorUnAuthorized",
+			DefaultMessage: &i18n.Message{
+				ID:    "ErrorUnAuthorized",
+				Other: "you are not authorized to commit this operation",
+			},
 		})
 		return c.JSON(http.StatusUnauthorized, message)
 	}
@@ -263,30 +377,39 @@ func (s *Server) getUserByUserName(c echo.Context) error {
 
 func (s *Server) getAllCategories(c echo.Context) error {
 	input := &models.Filters{}
-	err := c.Bind(input)
+
+	var err error
+	input.Page, err = strconv.Atoi(c.QueryParam("page"))
+	if err != nil {
+		return err
+	}
+	input.PageSize, err = strconv.Atoi(c.QueryParam("pageSize"))
 	if err != nil {
 		return err
 	}
 
-	input.SortSafeList = []string{"name", "-name"}
-
 	var cats []*models.Catagory
 	var metadata models.Metadata
 	if isAdmin(c) {
+		c.Logger().Error("ADMIN")
 		cats, metadata, err = models.Models.Catagory.GetAll(*input)
 		if err != nil {
+			c.Logger().Error(err)
 			return err
 		}
 	} else {
 		token := c.Get("user").(*jwt.Token)
 		claims := token.Claims.(jwt.MapClaims)
-		userID := claims["id"].(int)
+		userIDF := claims["id"].(float64)
+		userID := int(userIDF)
+
 		cats, metadata, err = models.Models.Catagory.GetAllActive(userID, *input)
 		if err != nil {
+			c.Logger().Error(err)
 			return err
 		}
 	}
-	return c.JSON(http.StatusOK, echo.Map{"message": echo.Map{"categories": cats, "metadata": metadata}})
+	return c.JSON(http.StatusOK, echo.Map{"categories": cats, "metadata": metadata})
 }
 
 func (s *Server) getProfilePicture(c echo.Context) error {
@@ -309,9 +432,71 @@ func (s *Server) getProfilePicture(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": message})
 	}
 
-	fmt.Println(picturePath)
+	return c.Redirect(http.StatusSeeOther, fmt.Sprintf("/%s", picturePath))
+}
 
-	return c.Redirect(http.StatusFound, "/pics/user_hsell-profile_picture.jpeg")
+func (s *Server) deleteCategory(c echo.Context) error {
+	lang := c.Request().Header.Get("Accept-Language")
+	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
+
+	name := c.Param("name")
+
+	err := models.Models.Catagory.DeleteByName(name)
+	if err != nil {
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "ErrCategoryNotExists",
+				Other: "That category dose not exist",
+			},
+		})
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": message})
+	}
+
+	message := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "CategoryDeleteSuccess",
+			Other: "Category removed successfully",
+		},
+	})
+	return c.JSON(http.StatusOK, echo.Map{"message": message})
+}
+
+func (s *Server) postCategory(c echo.Context) error {
+	lang := c.Request().Header.Get("Accept-Language")
+	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
+
+	cat := &models.Catagory{}
+
+	err := c.Bind(cat)
+	if err != nil {
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			DefaultMessage: &i18n.Message{
+				ID:    "ErrorGenericBadRequest",
+				Other: "Your request doe not match the specified format, please fix and try again",
+			},
+		})
+		return c.JSON(http.StatusBadRequest, message)
+	}
+
+	if msgs, err := Validator.Validate(cat, lang); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"errors": msgs})
+	}
+
+	err = models.Models.Catagory.Insert(cat)
+	if err != nil {
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			MessageID: "ErrorGenericInternal",
+		})
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": message})
+	}
+
+	message := localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "CategoryCreatedSuccess",
+			Other: "Category created successfully",
+		},
+	})
+	return c.JSON(http.StatusCreated, echo.Map{"message": message})
 }
 
 // Returns ture if the JWT user is the same
@@ -347,4 +532,14 @@ func doesUserExist(c echo.Context, localizer *i18n.Localizer) echo.Map {
 		return echo.Map{"error": message}
 	}
 	return nil
+}
+
+func getIDFromParam(c echo.Context) (int, error) {
+	idString := c.Param("id")
+	id, err := strconv.Atoi(idString)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }

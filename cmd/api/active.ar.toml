@@ -1,3 +1,11 @@
+[CategoryCreatedSuccess]
+hash = "sha1-e44a8f1e7e85da8a7cf0fb34904b8b8b408c01ae"
+other = "Category created successfully"
+
+[CategoryDeleteSuccess]
+hash = "sha1-d4ca1084f315495aeef5fa2e4acecd6d25458b28"
+other = "Category removed successfully"
+
 [CouldNotReadImage]
 hash = "sha1-9830ddecde6551eeabd42378e8628f763ed69744"
 other = "Could not proccess your image, plasea try again with a new image"
@@ -5,6 +13,10 @@ other = "Could not proccess your image, plasea try again with a new image"
 [Email]
 hash = "sha1-205ea7dbce5f6d59418f5c720699b13238b1517f"
 other = "Invalid Email address"
+
+[ErrCategoryNotExists]
+hash = "sha1-a74a8764186f77a53c4226e7478cd90dfc0ddea2"
+other = "That category dose not exist"
 
 [ErrorDuplicateEmailOrUsername]
 few = "Email or Username Already Exists"
@@ -19,17 +31,21 @@ zero = "Email or Username Already Exists"
 hash = "sha1-7b2d4d8c0ab1d9e166d7f8488fe1f7aee6971c91"
 other = "Username or Password incorrect"
 
+[ErrorGenericBadRequest]
+hash = "sha1-d473ffe1787d016bf098918d80460dd76e6bdb85"
+other = "Your request doe not match the specified format, please fix and try again"
+
 [ErrorGenericInternal]
 hash = "sha1-9de6a795c79f1d7c4f8f5ab9ce1db26f5e70be52"
 other = "We encountred an error proccessing you're request, please try again later"
 
+[ErrorUnAuthorized]
+hash = "sha1-82b3397bc32152208981f9e606cc13756d817934"
+other = "you are not authorized to commit this operation"
+
 [ErrorUserNotExists]
 hash = "sha1-1030932b66074803de9f40c75b4d9af54a5ecdd8"
 other = "No user with that name has been found"
-
-[InvalidEmail]
-hash = "sha1-a88b7dcd1a9e3e17770bbaa6d7515b31a2d7e85d"
-other = "email"
 
 [NotPngOrJpeg]
 hash = "sha1-d80efd8a9fcb8dd5e39efdd3e7e31b00c0f43f06"
@@ -51,6 +67,6 @@ other = "User deleted successfully"
 hash = "sha1-534b7dc859a23ce2fe7ff68eaba93c940c391119"
 other = "User info update successfully"
 
-[UnhashedPassword]
-hash = "sha1-5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
-other = "password"
+[UserUpdateSuccess]
+hash = "sha1-8b3d7a6c05825aff5286225f62abbb2217be59a6"
+other = "User info updated successfully"

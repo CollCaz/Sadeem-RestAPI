@@ -12,8 +12,8 @@ import (
 // Makes sure email is valid
 // And no i don't know how it works
 type ApiError struct {
-	Field string
-	Msg   string
+	Field string `json:"field"`
+	Msg   string `json:"msg"`
 }
 
 type CustomValidator struct {
@@ -26,7 +26,7 @@ func (cv *CustomValidator) Validate(i interface{}, errLang string) ([]ApiError, 
 		if errors.As(err, &ve) {
 			out := make([]ApiError, len(ve))
 			for i, fe := range ve {
-				out[i] = ApiError{msgForField(fe.Field(), errLang), msgForTag(fe.Tag(), errLang)}
+				out[i] = ApiError{msgForField(fe.Field()), msgForTag(fe.Tag(), errLang)}
 			}
 			return out, err
 		}
@@ -36,29 +36,20 @@ func (cv *CustomValidator) Validate(i interface{}, errLang string) ([]ApiError, 
 	return nil, nil
 }
 
-func msgForField(field, lang string) string {
-	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
-	var msg string
+func msgForField(field string) string {
 	switch field {
-	case "UnhashedPassword":
-		msg = localizer.MustLocalize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:    "UnhashedPassword",
-				Other: "password",
-			},
-		})
-	case "Email":
-		msg = localizer.MustLocalize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:    "InvalidEmail",
-				Other: "email",
-			},
-		})
-	default:
-		msg = field
-	}
 
-	return msg
+	case "UnhashedPassword":
+		return "password"
+	case "Email":
+		return "email"
+	case "Name":
+		return "name"
+	case "UserName":
+		return "userName"
+	default:
+		return field
+	}
 }
 
 func msgForTag(tag, lang string) string {

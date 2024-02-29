@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Catagory struct {
-	ID      int    `json:"-"`
-	Name    string `json:"name"`
-	Enabled bool   `json:"enabled,omitempty"`
+	ID   int    `json:"-"`
+	Name string `json:"name" validate:"required"`
 }
 
 type CatagoryModel struct {
@@ -35,7 +35,7 @@ func (cm *CatagoryModel) Insert(c *Catagory) error {
 	return nil
 }
 
-func (cm *CatagoryModel) Delete(c *Catagory) error {
+func (cm *CatagoryModel) DeleteByName(name string) error {
 	statement := `
   DELETE FROM categories
   WHERE name = ($1)
@@ -43,7 +43,7 @@ func (cm *CatagoryModel) Delete(c *Catagory) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := cm.DB.Exec(ctx, statement, &c.Name)
+	_, err := cm.DB.Exec(ctx, statement, name)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (cm *CatagoryModel) GetByName(name string) (*Catagory, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := cm.DB.QueryRow(ctx, statement, name).Scan(&cat.ID, &cat.Name, &cat.Enabled)
+	err := cm.DB.QueryRow(ctx, statement, name).Scan(&cat.ID, &cat.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -70,17 +70,53 @@ func (cm *CatagoryModel) GetByName(name string) (*Catagory, error) {
 	return cat, nil
 }
 
-func (cm *CatagoryModel) Activate(c *Catagory) error {
-	statement := `
-  UPDATE catagories
-  SET activated = TRUE
-  WHERE name = ($1)
+func (cm *CatagoryModel) EditOnUser(userName string, categories []string, activate bool) error {
+	activateTemplate := `
+  INSERT INTO user_categories (user_id, category_id)
+  VALUES
+  ((SELECT id FROM users WHERE name = $1), (SELECT id FROM categories WHERE name = $2))
   `
+
+	deactivateTemplate := `
+  DELETE FROM user_categories
+  WHERE
+  user_id = (SELECT id FROM users WHERE name = $1)
+  AND
+  category_id = (SELECT id FROM categories WHERE name = $2)
+  `
+
+	batch := &pgx.Batch{}
+
+	for _, category := range categories {
+		switch activate {
+		case true:
+			batch.Queue(activateTemplate, userName, category)
+		case false:
+			batch.Queue(deactivateTemplate, userName, category)
+		}
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := cm.DB.Exec(ctx, statement, &c.Name)
+	br := cm.DB.SendBatch(ctx, batch)
+	_, err := br.Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (um *CatagoryModel) Exists(id int) error {
+	statement := `
+  SELECT null FROM categories
+  WHERE id = $1
+  `
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := um.DB.QueryRow(ctx, statement).Scan()
 	if err != nil {
 		return err
 	}
@@ -90,9 +126,9 @@ func (cm *CatagoryModel) Activate(c *Catagory) error {
 
 func (um *CatagoryModel) GetAll(filters Filters) ([]*Catagory, Metadata, error) {
 	statement := fmt.Sprintf(`
-  SELECT count(*) OVER(), name, activated FROM categories
-  ORDER BY %s %s, id ASC
-  LIMIT %d OFFSET %d `, filters.sortColumn(), filters.sortDirection(), filters.limit(), filters.offset())
+  SELECT count(*) OVER(), name FROM categories
+  ORDER BY name %s, id ASC
+  LIMIT %d OFFSET %d `, filters.sortDirection(), filters.limit(), filters.offset())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -113,7 +149,6 @@ func (um *CatagoryModel) GetAll(filters Filters) ([]*Catagory, Metadata, error) 
 		err := rows.Scan(
 			&totalRecords,
 			&cat.Name,
-			&cat.Enabled,
 		)
 		if err != nil {
 			return nil, Metadata{}, err

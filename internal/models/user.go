@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -43,9 +44,6 @@ type UserModel struct {
 }
 
 func (um *UserModel) Insert(user *User) error {
-	if defaultPFP == "" {
-		defaultPFP = "pics/default_pfp.png"
-	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.UnhashedPassword), 12)
 	if err != nil {
 		return err
@@ -69,14 +67,32 @@ func (um *UserModel) Insert(user *User) error {
 	return nil
 }
 
-func (um *UserModel) DeleteUserByName(userName string) error {
+func (um *UserModel) Exists(id int) error {
+	statement := `
+  SELECT id FROM users
+  WHERE id = $1
+  RETURNING id
+  `
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var tmp int
+	err := um.DB.QueryRow(ctx, statement, id).Scan(tmp)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (um *UserModel) DeleteUser(name string) error {
 	statement := `
   DELETE FROM users WHERE name = ($1)
   `
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := um.DB.Exec(ctx, statement, userName)
+	_, err := um.DB.Exec(ctx, statement, name)
 	if err != nil {
 		return err
 	}
@@ -166,16 +182,18 @@ func (um *UserModel) ResetPicture(userName string) error {
 }
 
 func (um *UserModel) ValidateLogin(user *User) error {
-	var hashedPassword []byte
-	selectStatement := `
-  SELECT hashed_password FROM users
+	hashedPassword := um.getHashedPassword(user)
+	statement := `
+  SELECT name FROM users
   WHERE email = ($1)
   `
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := um.DB.QueryRow(ctx, selectStatement, &user.Email).Scan(&hashedPassword)
+	err := um.DB.QueryRow(ctx, statement, user.Email).Scan(&user.UserName)
 	if err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
 
@@ -208,4 +226,48 @@ func (um *UserModel) UpdatePicture(user *User) error {
 	}
 
 	return nil
+}
+
+func (um *UserModel) UpdateUser(user *User) error {
+	oldHashedPassword := um.getHashedPassword(user)
+	err := bcrypt.CompareHashAndPassword(oldHashedPassword, []byte(user.UnhashedPassword))
+	if err != nil {
+		return errors.New("Password can't be the same as the old one")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.UnhashedPassword), 12)
+	if err != nil {
+		return err
+	}
+
+	statement := `
+  UPDATE SET
+    name = $1,
+    email = $2,
+    hashed_password = $3,
+  WHERE id = $4
+  `
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err = um.DB.Exec(ctx, statement, user.UserName, user.Email, hashedPassword, user.ID)
+	return err
+}
+
+func (um *UserModel) getHashedPassword(user *User) []byte {
+	var hashedPassword []byte
+	selectStatement := `
+  SELECT hashed_password FROM users
+  WHERE email = ($1)
+  `
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := um.DB.QueryRow(ctx, selectStatement, &user.Email).Scan(&hashedPassword)
+	if err != nil {
+		return nil
+	}
+
+	return hashedPassword
 }

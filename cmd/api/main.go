@@ -34,8 +34,7 @@ func main() {
 	}
 
 	// Making sure the JWT signing key is available
-	signingKey := os.Getenv("JWT_SIGNING_KEY")
-	if signingKey == "" {
+	if os.Getenv("JWT_SIGNING_KEY") == "" {
 		panic("No signking key found! please export the JWT_SIGNING_KEY env variable")
 	}
 	server := server.NewServer()
