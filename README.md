@@ -54,7 +54,7 @@ make up
 
 ### POST
 
-. /api/register
+. /api/users
 ```json
 {
     "userName" : "MyName",
@@ -95,7 +95,7 @@ make up
 
 ./api/users/:name/profile-picture  Get the profile picture of a particular user
 
-./api/users:name  Get user info (Admins can see anyone, users can only see themselves)
+./api/users:name  Get user info 
 
 ./api/categories?page=1&size=1&  Get all activated categories with pagination
 
@@ -111,4 +111,10 @@ make up
 ```
 ./api/users/:name/profile-picture  Updates the profile picture with the one attached in the body
 
+## DELETE
 
+./api/users/:name  deletes a user
+
+./api/users/:name/profile-pictures deletes the user's profile pipcture, reseting it back to the default one
+
+./api/categories/:name deletes a category
