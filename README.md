@@ -62,6 +62,9 @@ make up
 
 ### POST
 
+Respnsed are available and in englis hand in arabic (translations are still incomplete)
+To choose the language simply change the Accept-Languae header to en or ar.
+
 . /api/users
 ```json
 {
