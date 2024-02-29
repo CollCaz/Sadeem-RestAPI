@@ -102,6 +102,13 @@ make up
 
 ## PUT
 
+./api/users/:name/  updates user info
+```json
+{
+    "userName" : "newUserName",
+    "email" : "new@email.com"
+}
+```
 ./api/users/:name/profile-picture  Updates the profile picture with the one attached in the body
 
 
