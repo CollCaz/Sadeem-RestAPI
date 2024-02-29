@@ -19,6 +19,14 @@ RestAPI written in Go using the Echo framework
 
 6. run the binary found in bin/ .
 
+7. after creating a user, you can make them an admin with this query
+
+```sql
+
+INSERT INTO admin_users (user_id) VALUES("You're User's ID")
+
+```
+
 ## MakeFile
 
 print all make options and their description
