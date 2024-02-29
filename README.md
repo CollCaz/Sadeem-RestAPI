@@ -11,7 +11,7 @@ RestAPI written in Go using the Echo framework
 
 3. Create a new database for this project.
 
-4. Define your `$DATABASE_URL` and `$JWT_SIGNING_TOKEN` environment variables and optionally the `$DEFAULT_PROFILE_PICTURE` and `$PICTURE_DIR` variables.
+4. Define your `$DATABASE_URL`, `$JWT_SIGNING_TOKEN`, `$DEFAULT_PROFILE_PICTURE` and `$PICTURE_DIR` environment variables.
 
 5. run `make up` to apply up migrations.
 
@@ -49,3 +49,45 @@ apply up migrations
 ```bash
 make up
 ```
+
+## End Points
+
+### POST
+
+. /api/register
+```json
+{
+    "userName" : "MyName",
+    "emial"    : "test@email.com",
+    "password" : "12345678",
+}
+```
+
+. /api/login
+
+``` json
+{
+    "email" : "test@email.com",
+    "password" : "12345678"
+}
+
+```
+
+./api/categories
+
+```json
+{
+    "name" : "Example"
+}
+
+```
+./api/user-categories  Activates or deactivates a catagory for a particular user
+
+```json
+{
+    "userName" : "nonAdminUser",
+    "categories" : ["Example1", "Category1", "Category2"],
+    "activated" : true // set it to false to deactivate the categories
+}
+```
+
