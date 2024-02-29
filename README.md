@@ -23,7 +23,7 @@ RestAPI written in Go using the Echo framework
 
 ```sql
 
-INSERT INTO admin_users (user_id) VALUES("You're User's ID")
+INSERT INTO admin_users (user_id) VALUES("Your User's ID")
 
 ```
 
