@@ -164,12 +164,13 @@ func (um *UserModel) SetUserRole(user *User) {
   SELECT users.id FROM users
   JOIN admin_users 
   ON admin_users.user_id = users.id
+  WHERE users.email = $1
   `
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := um.DB.QueryRow(ctx, selectAdmin).Scan(&user.ID)
+	err := um.DB.QueryRow(ctx, selectAdmin, user.Email).Scan(&user.ID)
 	if err != nil {
 		fmt.Println("ALKISDASKDJ", err)
 		user.IsAdmin = false

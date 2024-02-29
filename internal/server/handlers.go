@@ -157,7 +157,7 @@ func (s *Server) login(c echo.Context) error {
 	}
 
 	models.Models.User.SetUserRole(user)
-	models.Models.User.SetID(user)
+	// models.Models.User.SetID(user)
 	c.Logger().Error(user)
 
 	token, err := auth.CreateJwtToken(user)
@@ -394,6 +394,7 @@ func (s *Server) getAllCategories(c echo.Context) error {
 			return err
 		}
 	} else {
+		c.Logger().Error("EL:KADJF")
 		userID := getIDFromToken(c)
 
 		cats, metadata, err = models.Models.Catagory.GetAllActive(userID, *input)
@@ -532,6 +533,7 @@ func getIDFromToken(c echo.Context) int {
 	claims := token.Claims.(jwt.MapClaims)
 	userIDF := claims["id"].(float64)
 	userID := int(userIDF)
+	c.Logger().Error(userID)
 
 	return userID
 }
