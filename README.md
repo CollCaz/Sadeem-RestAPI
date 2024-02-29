@@ -15,7 +15,7 @@ RestAPI written in Go using the Echo framework
 
 5. run `make up` to apply up migrations.
 
-5. run `make build` to buld the application.
+5. run `make build` to buld the application. (If you aren't using make, please make sure to manually follow the same commands in the make script)
 
 6. run the binary found in bin/ .
 
@@ -62,7 +62,7 @@ make up
 
 ### POST
 
-Respnsed are available and in english hand in arabic (translations are still incomplete)
+Respnses are available in english and in arabic
 To choose the language simply change the Accept-Languae header to en or ar.
 
 . /api/users
@@ -117,7 +117,8 @@ To choose the language simply change the Accept-Languae header to en or ar.
 ```json
 {
     "userName" : "newUserName",
-    "email" : "new@email.com"
+    "email" : "new@email.com",
+    "password" : "currentPassword"
 }
 ```
 ./api/users/:name/profile-picture  Updates the profile picture with the one attached in the body
