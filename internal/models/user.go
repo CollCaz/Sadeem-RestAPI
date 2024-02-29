@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -144,19 +145,33 @@ func (um *UserModel) GetUserByName(userName string) (*User, error) {
 	return user, nil
 }
 
-// Sets the role of the user (admin or not)
-func (um *UserModel) SetUserRole(user *User) {
-	selectStatement := `
-  SELECT name FROM users
-  JOIN admin_users 
-  ON admin_users.user_id = users.id
-  WHERE email = $1`
+func (um *UserModel) SetID(user *User) {
+	selectStatement := `SELECT id, name FROM users WHERE email = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := um.DB.QueryRow(ctx, selectStatement, user.Email).Scan(&user.UserName)
+	err := um.DB.QueryRow(ctx, selectStatement, user.Email).Scan(&user.ID, &user.UserName)
 	if err != nil {
+		fmt.Println("ERROR", err.Error())
+		return
+	}
+}
+
+// Sets the role of the user (admin or not)
+func (um *UserModel) SetUserRole(user *User) {
+	selectAdmin := `
+  SELECT users.id FROM users
+  JOIN admin_users 
+  ON admin_users.user_id = users.id
+  `
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := um.DB.QueryRow(ctx, selectAdmin).Scan(&user.ID)
+	if err != nil {
+		fmt.Println("ALKISDASKDJ", err)
 		user.IsAdmin = false
 		return
 	}
@@ -193,7 +208,6 @@ func (um *UserModel) ValidateLogin(user *User) error {
 
 	err := um.DB.QueryRow(ctx, statement, user.Email).Scan(&user.UserName)
 	if err != nil {
-		fmt.Println(err.Error())
 		return err
 	}
 
@@ -229,30 +243,29 @@ func (um *UserModel) UpdatePicture(user *User) error {
 }
 
 func (um *UserModel) UpdateUser(user *User) error {
-	oldHashedPassword := um.getHashedPassword(user)
-	err := bcrypt.CompareHashAndPassword(oldHashedPassword, []byte(user.UnhashedPassword))
-	if err != nil {
-		return errors.New("Password can't be the same as the old one")
+	updateName := `UPDATE users SET name = $1 WHERE id = $2`
+	updateEmail := `UPDATE users SET email = $1 WHERE id = $2`
+
+	batch := &pgx.Batch{}
+
+	if user.Email != "" {
+		batch.Queue(updateEmail, user.Email, user.ID)
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.UnhashedPassword), 12)
-	if err != nil {
-		return err
+	if user.UserName != "" {
+		batch.Queue(updateName, user.UserName, user.ID)
 	}
-
-	statement := `
-  UPDATE SET
-    name = $1,
-    email = $2,
-    hashed_password = $3,
-  WHERE id = $4
-  `
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err = um.DB.Exec(ctx, statement, user.UserName, user.Email, hashedPassword, user.ID)
-	return err
+	br := um.DB.SendBatch(ctx, batch)
+	_, err := br.Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (um *UserModel) getHashedPassword(user *User) []byte {

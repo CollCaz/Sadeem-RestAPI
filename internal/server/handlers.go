@@ -71,11 +71,9 @@ func (s *Server) updateUser(c echo.Context) error {
 	}
 
 	type inputStruct struct {
-		Name            string `json:"name,omitempty"`
-		Email           string `json:"emai,omitempty"`
-		Password        string `json:"password,omitempty"`
-		NewPassword     string `json:"newPassword,omitempty"`
-		PasswordConfirm string `json:"passwordConfirm,omitempty" validate:"eqfield=NewPassword"`
+		Name     string `json:"userName,omitempty"`
+		Email    string `json:"email,omitempty" validate:"email"`
+		Password string `json:"password" validate:"required"`
 	}
 
 	input := &inputStruct{}
@@ -93,14 +91,17 @@ func (s *Server) updateUser(c echo.Context) error {
 	id, err := getIDFromParam(c)
 	if err != nil {
 		c.Logger().Error(err)
-		return err
+		message := localizer.MustLocalize(&i18n.LocalizeConfig{
+			MessageID: "ErrorGeniricBadRequest",
+		})
+
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": message})
 	}
 
 	user := &models.User{
-		ID:               id,
-		UserName:         input.Name,
-		Email:            input.Email,
-		UnhashedPassword: input.PasswordConfirm,
+		ID:       id,
+		UserName: input.Name,
+		Email:    input.Email,
 	}
 
 	err = models.Models.User.UpdateUser(user)
@@ -156,6 +157,8 @@ func (s *Server) login(c echo.Context) error {
 	}
 
 	models.Models.User.SetUserRole(user)
+	models.Models.User.SetID(user)
+	c.Logger().Error(user)
 
 	token, err := auth.CreateJwtToken(user)
 	if err != nil {
@@ -216,6 +219,7 @@ func (s *Server) deleteUser(c echo.Context) error {
 
 	err := models.Models.User.DeleteUser(name)
 	if err != nil {
+		c.Logger().Error(err)
 		message := localizer.MustLocalize(&i18n.LocalizeConfig{
 			MessageID: "ErrorGenericInternal",
 		})
@@ -263,7 +267,7 @@ func (s *Server) setCategoryVisibilityOnUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, nil)
 }
 
-func (s *Server) postProfilePicture(c echo.Context) error {
+func (s *Server) updateProfilePicture(c echo.Context) error {
 	lang := c.Request().Header.Get("Accept-Language")
 	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
 
@@ -352,17 +356,6 @@ func (s *Server) getUserByUserName(c echo.Context) error {
 	lang := c.Request().Header.Get("Accept-Language")
 	localizer := i18n.NewLocalizer(&translation.Bundle, lang)
 
-	if !ValidTokenForParam(c) {
-		c.Logger().Error(c.Get("user").(*jwt.Token))
-		message := localizer.MustLocalize(&i18n.LocalizeConfig{
-			DefaultMessage: &i18n.Message{
-				ID:    "ErrorUnAuthorized",
-				Other: "you are not authorized to commit this operation",
-			},
-		})
-		return c.JSON(http.StatusUnauthorized, message)
-	}
-
 	userName := c.Param("name")
 	user, err := models.Models.User.GetUserByName(userName)
 	if err != nil {
@@ -370,6 +363,10 @@ func (s *Server) getUserByUserName(c echo.Context) error {
 			MessageID: "ErrorUserNotExists",
 		})
 		return c.JSON(http.StatusUnauthorized, echo.Map{"error": message})
+	}
+
+	if !ValidTokenForParam(c) {
+		return c.JSON(http.StatusUnauthorized, echo.Map{"user": echo.Map{"userName": user.UserName, "email": user.Email}})
 	}
 
 	return c.JSON(http.StatusOK, echo.Map{"message": user})
@@ -391,17 +388,13 @@ func (s *Server) getAllCategories(c echo.Context) error {
 	var cats []*models.Catagory
 	var metadata models.Metadata
 	if isAdmin(c) {
-		c.Logger().Error("ADMIN")
 		cats, metadata, err = models.Models.Catagory.GetAll(*input)
 		if err != nil {
 			c.Logger().Error(err)
 			return err
 		}
 	} else {
-		token := c.Get("user").(*jwt.Token)
-		claims := token.Claims.(jwt.MapClaims)
-		userIDF := claims["id"].(float64)
-		userID := int(userIDF)
+		userID := getIDFromToken(c)
 
 		cats, metadata, err = models.Models.Catagory.GetAllActive(userID, *input)
 		if err != nil {
@@ -532,6 +525,15 @@ func doesUserExist(c echo.Context, localizer *i18n.Localizer) echo.Map {
 		return echo.Map{"error": message}
 	}
 	return nil
+}
+
+func getIDFromToken(c echo.Context) int {
+	token := c.Get("user").(*jwt.Token)
+	claims := token.Claims.(jwt.MapClaims)
+	userIDF := claims["id"].(float64)
+	userID := int(userIDF)
+
+	return userID
 }
 
 func getIDFromParam(c echo.Context) (int, error) {

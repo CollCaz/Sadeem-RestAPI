@@ -30,7 +30,7 @@ func (s *Server) RegisterRoutes() *echo.Echo {
 
 	// PUT
 	e.PUT("api/users/:id", jwtMiddleWare(s.updateUser))
-	e.PUT("api/users/:name/profile-picture", jwtMiddleWare(s.postProfilePicture))
+	e.PUT("api/users/:name/profile-picture", jwtMiddleWare(s.updateProfilePicture))
 
 	// DELETE
 	e.DELETE("api/users/:name", jwtMiddleWare(s.deleteUser))

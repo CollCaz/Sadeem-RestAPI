@@ -51,25 +51,6 @@ func (cm *CatagoryModel) DeleteByName(name string) error {
 	return nil
 }
 
-func (cm *CatagoryModel) GetByName(name string) (*Catagory, error) {
-	cat := &Catagory{}
-	statement := `
-  SELECT id, name, activated
-  FROM categories
-  WHERE LOWER(name) = LOWER($1)
-  `
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	err := cm.DB.QueryRow(ctx, statement, name).Scan(&cat.ID, &cat.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	return cat, nil
-}
-
 func (cm *CatagoryModel) EditOnUser(userName string, categories []string, activate bool) error {
 	activateTemplate := `
   INSERT INTO user_categories (user_id, category_id)
@@ -164,18 +145,26 @@ func (um *CatagoryModel) GetAll(filters Filters) ([]*Catagory, Metadata, error) 
 
 func (um *CatagoryModel) GetAllActive(userID int, filters Filters) ([]*Catagory, Metadata, error) {
 	// we use Sprintf because we can't use variables in the some of the paramaters
-	statement := fmt.Sprintf(`
-  SELECT count(*) OVER(), name FROM categories
+	// statement := fmt.Sprintf(`
+	// SELECT count(*) OVER(), categories.name FROM categories
+	// JOIN user_categories
+	// ON categories.id = user_categories.category_id
+	// WHERE user_categories.user_id = %d
+	// ORDER BY name %s, id ASC
+	// LIMIT %d OFFSET %d `, userID, filters.sortDirection(), filters.limit(), filters.offset())
+
+	statement := `
+  SELECT count(*) OVER(), categories.name FROM categories
   JOIN user_categories
   ON categories.id = user_categories.category_id
-  WHERE user_categories.user_id = %d
-  ORDER BY name %s, id ASC
-  LIMIT %d OFFSET %d `, userID, filters.sortDirection(), filters.limit(), filters.offset())
+  JOIN users 
+  ON user_categories.user_id = users.id 
+  WHERE user_categories.user_id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := um.DB.Query(ctx, statement)
+	rows, err := um.DB.Query(ctx, statement, userID)
 	if err != nil {
 		return nil, Metadata{}, err
 	}

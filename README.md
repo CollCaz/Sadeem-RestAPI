@@ -81,7 +81,7 @@ make up
 }
 
 ```
-./api/user-categories  Activates or deactivates a catagory for a particular user
+./api/user-categories  Activates or deactivates categories for a particular user
 
 ```json
 {
@@ -90,4 +90,18 @@ make up
     "activated" : true // set it to false to deactivate the categories
 }
 ```
+
+## GET
+
+./api/users/:name/profile-picture  Get the profile picture of a particular user
+
+./api/users:name  Get user info (Admins can see anyone, users can only see themselves)
+
+./api/categories?page=1&size=1&  Get all activated categories with pagination
+
+
+## PUT
+
+./api/users/:name/profile-picture  Updates the profile picture with the one attached in the body
+
 
