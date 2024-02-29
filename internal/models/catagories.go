@@ -164,7 +164,6 @@ func (um *CatagoryModel) GetAllActive(userID int, filters Filters) ([]*Catagory,
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	fmt.Println("ALKDSJF", userID)
 	rows, err := um.DB.Query(ctx, statement, userID)
 	if err != nil {
 		return nil, Metadata{}, err

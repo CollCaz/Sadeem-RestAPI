@@ -39,10 +39,6 @@ other = "Your request doe not match the specified format, please fix and try aga
 hash = "sha1-9de6a795c79f1d7c4f8f5ab9ce1db26f5e70be52"
 other = "We encountred an error proccessing you're request, please try again later"
 
-[ErrorUnAuthorized]
-hash = "sha1-82b3397bc32152208981f9e606cc13756d817934"
-other = "you are not authorized to commit this operation"
-
 [ErrorUserNotExists]
 hash = "sha1-1030932b66074803de9f40c75b4d9af54a5ecdd8"
 other = "No user with that name has been found"
