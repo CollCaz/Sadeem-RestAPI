@@ -1,68 +1,64 @@
 [CategoryCreatedSuccess]
 hash = "sha1-e44a8f1e7e85da8a7cf0fb34904b8b8b408c01ae"
-other = "Category created successfully"
+other = "تم انشاء الفئة بنجاح"
 
 [CategoryDeleteSuccess]
 hash = "sha1-d4ca1084f315495aeef5fa2e4acecd6d25458b28"
-other = "Category removed successfully"
+other = "تم حذف الفئة بنجاح"
 
 [CouldNotReadImage]
 hash = "sha1-9830ddecde6551eeabd42378e8628f763ed69744"
-other = "Could not proccess your image, plasea try again with a new image"
+other = "لم نستطع معالجة الصورة، الرجاء المحاولة مرة اخرى"
 
 [Email]
 hash = "sha1-205ea7dbce5f6d59418f5c720699b13238b1517f"
-other = "Invalid Email address"
+other = "الايميل غير صالح"
 
 [ErrCategoryNotExists]
 hash = "sha1-a74a8764186f77a53c4226e7478cd90dfc0ddea2"
-other = "That category dose not exist"
+other = "هذه الفئىة ليست موجودة"
 
 [ErrorDuplicateEmailOrUsername]
-few = "Email or Username Already Exists"
 hash = "sha1-318d66d4626db63687c21e0790d4305b017bc15c"
-many = "Email or Username Already Exists"
-one = "Email or Username Already Exists"
-other = "Email or Username Already Exists"
-two = "Email or Username Already Exists"
-zero = "Email or Username Already Exists"
+other = "الايمي او اسم المستختدم مستعملان من قيل"
+
 
 [ErrorFailedLogin]
 hash = "sha1-7b2d4d8c0ab1d9e166d7f8488fe1f7aee6971c91"
-other = "Username or Password incorrect"
+other = "البريد الاكتروني او كلمة السر غير صحيحة"
 
 [ErrorGenericBadRequest]
 hash = "sha1-d473ffe1787d016bf098918d80460dd76e6bdb85"
-other = "Your request doe not match the specified format, please fix and try again"
+other = "بياناتك لا تتبع الشكل الصحيح، الرجاء المحاولة مرة اخرى"
 
 [ErrorGenericInternal]
 hash = "sha1-9de6a795c79f1d7c4f8f5ab9ce1db26f5e70be52"
-other = "We encountred an error proccessing you're request, please try again later"
+other = "قالنا مشاكل اثناء معالحة البيانات، الرجاء المحاولة مرة اخرى"
 
 [ErrorUserNotExists]
 hash = "sha1-1030932b66074803de9f40c75b4d9af54a5ecdd8"
-other = "No user with that name has been found"
+other = "لا يوجد مستخدم بذلك الاسم"
 
 [NotPngOrJpeg]
 hash = "sha1-d80efd8a9fcb8dd5e39efdd3e7e31b00c0f43f06"
-other = "Profile Picture must be a PNG or a JPG"
+other = "يجب ان تكون الصورة ملف PNG او JPEG"
 
 [Required]
 hash = "sha1-dedbaded6d5a4ed17eefa2e4ee3eee026b7d1d11"
-other = "This field is required"
+other = "هذه الخانة مطلوبة"
 
 [SuccessUpdateProfilePicture]
 hash = "sha1-aa2842aeff9f2835ce5dfa096fb320ba4a3660fd"
-other = "Profile Picture Updated Successfully"
+other = "تم تغيير الصورة الشخصية بنجاح"
 
 [SuccessUserDelete]
 hash = "sha1-c73f99152b03acd45e1d3e08021cd9c2029e9743"
-other = "User deleted successfully"
+other = "تم حذف المستخدم بنجاح"
 
 [SuccessUserUpdate]
 hash = "sha1-534b7dc859a23ce2fe7ff68eaba93c940c391119"
-other = "User info update successfully"
+other = "تم تعديل البيانات بنجاح"
 
 [UserUpdateSuccess]
 hash = "sha1-8b3d7a6c05825aff5286225f62abbb2217be59a6"
-other = "User info updated successfully"
+other = "تم تعديل البيانات بنجاح"
